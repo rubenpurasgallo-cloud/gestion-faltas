@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestión de Faltas</title>
+    <style>
+        :root { --primary: #2c3e50; --accent: #3498db; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--bg); display: flex; justify-content: center; padding: 40px 20px; margin: 0; }
+        .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 1100px; }
+        h2 { color: var(--primary); text-align: center; margin-bottom: 30px; border-bottom: 2px solid var(--bg); padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th { background-color: var(--primary); color: white; padding: 15px; text-align: left; }
+        td { padding: 15px; border-bottom: 1px solid #eee; }
+        .alumno-nombre { font-weight: bold; color: var(--primary); }
+        select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+        .btn-container { text-align: right; margin-top: 20px; }
+        .btn-guardar { background-color: #27ae60; color: white; padding: 12px 35px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        .btn-guardar:disabled { background-color: #bdc3c7; }
+        .badge-profesor { display: inline-block; background: #e8f4fd; color: var(--accent); padding: 5px 15px; border-radius: 20px; font-size: 13px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="badge-profesor">Sesión: Cuenta Personal de Google</div>
+    <h2>Panel de Control de Asistencia</h2>
+    
+    <form id="attendanceForm">
+        <table>
+            <thead>
+                <tr>
+                    <th>Alumno</th>
+                    <th>Asignatura</th>
+                    <th>Día</th>
+                    <th>Estado de Asistencia</th>
+                </tr>
+            </thead>
+            <tbody id="tablaCuerpo"></tbody>
+        </table>
+
+        <div class="btn-container">
+            <button type="button" id="btnEnviar" class="btn-guardar" onclick="procesarFaltas()">Registrar en Google Sheets</button>
+        </div>
+    </form>
+</div>
+
+<script>
+// Definimos el alumno y las opciones
+const alumnos = ["morocho"];
+const asignaturas = ["Matemáticas", "Lengua", "Historia"];
+const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
+
+// Función para construir la tabla al cargar la página
+window.onload = function() {
+    const cuerpo = document.getElementById('tablaCuerpo');
+    alumnos.forEach((nombre, i) => {
+        const fila = `
+            <tr>
+                <td class="alumno-nombre">${nombre}</td>
+                <td>
+                    <select id="asig_${i}">
+                        ${asignaturas.map(a => `<option value="${a}">${a}</option>`).join('')}
+                    </select>
+                </td>
+                <td>
+                    <select id="dia_${i}">
+                        ${dias.map(d => `<option value="${d}">${d}</option>`).join('')}
+                    </select>
+                </td>
+                <td>
+                    <select id="estado_${i}">
+                        <option value="Presente">Presente</option>
+                        <option value="Falta">Falta</option>
+                        <option value="Justificada">Justificada</option>
+                    </select>
+                </td>
+            </tr>`;
+        cuerpo.innerHTML += fila;
+    });
+};
+
+async function procesarFaltas() {
+    const btn = document.getElementById('btnEnviar');
+    // Asegúrate de que esta URL sea la de tu "Implementación" (Deployment) más reciente
+    const scriptURL = "https://script.google.com/macros/s/AKfycbwVRrq0nNRrSKkJ99wZcjsWjKrMRl1WBcVtQ8NtEgu1_gV75YiQ1S-u4RnwxsanGV-9rw/exec";
+
+    btn.disabled = true;
+    btn.innerText = "Enviando...";
+
+    const datosFinales = alumnos.map((nombre, i) => ({
+        alumno: nombre,
+        asignatura: document.getElementById(`asig_${i}`).value,
+        dia: document.getElementById(`dia_${i}`).value,
+        estado: document.getElementById(`estado_${i}`).value
+    }));
+
+    try {
+        const response = await fetch(scriptURL, {
+            method: "POST",
+            mode: "no-cors", // Añadido para evitar problemas de CORS en local
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(datosFinales)
+        });
+
+        alert("✅ Solicitud enviada (Verifica tu Sheets)");
+
+    } catch (error) {
+        alert("❌ Error: " + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Registrar en Google Sheets";
+    }
+}
+</script>
+</body>
+</html>
